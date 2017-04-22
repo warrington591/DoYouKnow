@@ -16,12 +16,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.ErrorCodes;
+import com.firebase.ui.auth.IdpResponse;
 import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -52,8 +56,6 @@ public class MainActivity extends AppCompatActivity {
                                     Toast.LENGTH_LONG)
                                     .show();
 
-                            // Close activity
-//                            finish();
                         }
                     });
         }
@@ -113,7 +115,10 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(
                             AuthUI.getInstance()
                                     .createSignInIntentBuilder()
-                                    .setProviders(AuthUI.EMAIL_PROVIDER)
+                                    .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
+                                            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build(),
+                                            new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build(),
+                                            new AuthUI.IdpConfig.Builder(AuthUI.TWITTER_PROVIDER).build()))
                                     .build(),SIGN_IN_REQUEST_CODE
                     );
 
@@ -130,6 +135,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == SIGN_IN_REQUEST_CODE) {
+
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+            Log.d(TAG, "response is: "+response.toString());
             if(resultCode == RESULT_OK) {
                 Toast.makeText(this,
                         "Successfully signed in. Welcome!",
@@ -137,13 +145,38 @@ public class MainActivity extends AppCompatActivity {
                         .show();
                 displayChatMessages();
             } else {
-                Toast.makeText(this,
-                        "We couldn't sign you in. Please try again later.",
-                        Toast.LENGTH_LONG)
-                        .show();
+                // Sign in failed
+                if (response == null) {
+                    // User pressed back button
+                    Toast.makeText(this,
+                            "Sign-in canceled",
+                            Toast.LENGTH_LONG)
+                            .show();
+                    Log.d(TAG, "response is: sign in failed");
 
-                // Close the app
-                finish();
+                    return;
+                }
+
+                if (response.getErrorCode() == ErrorCodes.NO_NETWORK) {
+                    Toast.makeText(this,
+                            "No internet connection",
+                            Toast.LENGTH_LONG)
+                            .show();
+                    Log.d(TAG, "response is: no internet connection");
+
+                    return;
+                }
+
+                if (response.getErrorCode() == ErrorCodes.UNKNOWN_ERROR) {
+                    Toast.makeText(this,
+                            "Unknown Error",
+                            Toast.LENGTH_LONG)
+                            .show();
+
+                    Log.d(TAG, "response is: unknown error");
+
+                    return;
+                }
             }
         }
 
@@ -154,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
         FirebaseUser currentUser = mAuth.getCurrentUser();
-
     }
 
 

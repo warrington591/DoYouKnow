@@ -2,4 +2,6 @@
     <string name="app_name">DoYouKnow</string>
     <string name="hint_password">its a hint</string>
     <string name="hint_email">its has @</string>
+    <string name="facebook_application_id">1905590056329354</string>
+    <string name="fb_login_protocol_scheme">fb1905590056329354</string>
 </resources>
