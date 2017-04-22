@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">DoYouKnow</string>
+    <string name="hint_password">its a hint</string>
+    <string name="hint_email">its has @</string>
+</resources>

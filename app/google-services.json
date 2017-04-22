@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "63368595225",
+    "firebase_url": "https://cardchat-26abb.firebaseio.com",
+    "project_id": "cardchat-26abb",
+    "storage_bucket": "cardchat-26abb.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63368595225:android:1a4942dfdcd54634",
+        "android_client_info": {
+          "package_name": "com.bloomfield.warrington.doyouknow"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "63368595225-80mq0p2k725oeiv3rro23l0oaval2635.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJ8ibpfe0e2UpdfjqovPz1ReEn36DNr-k"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
