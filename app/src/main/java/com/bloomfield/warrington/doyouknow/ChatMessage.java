@@ -1,5 +1,7 @@
 package com.bloomfield.warrington.doyouknow;
 
+import android.net.Uri;
+
 import java.util.Date;
 
 /**
@@ -9,16 +11,23 @@ import java.util.Date;
 public class ChatMessage {
     private String messageText;
     private String messageUser;
+    private String image;
     private long messageTime;
 
-    public ChatMessage(String messageText, String messageUser) {
+    public ChatMessage(String messageText, String messageUser, String imageUrl) {
         this.messageText = messageText;
         this.messageUser = messageUser;
-
+        this.image =imageUrl;
         // Initialize to current time
         messageTime = new Date().getTime();
     }
 
+    public ChatMessage(String messageText, String messageUser) {
+        this.messageText = messageText;
+        this.messageUser = messageUser;
+        // Initialize to current time
+        messageTime = new Date().getTime();
+    }
 
 
     public ChatMessage(){
@@ -43,6 +52,14 @@ public class ChatMessage {
 
     public long getMessageTime() {
         return messageTime;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public void setMessageTime(long messageTime) {

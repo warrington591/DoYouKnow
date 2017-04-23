@@ -1,8 +1,14 @@
 package com.bloomfield.warrington.doyouknow;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
@@ -10,11 +16,15 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsSpinner;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.BitmapImageViewTarget;
 import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.ErrorCodes;
 import com.firebase.ui.auth.IdpResponse;
@@ -23,9 +33,13 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.UserInfo;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,6 +50,10 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fab;
 
     private FirebaseListAdapter<ChatMessage> adapter;
+    private String facebookUserId="";
+    private List<? extends UserInfo> now = new ArrayList<>();
+    private Handler myListView= new Handler(Looper.myLooper());
+    private ListView listOfMessages;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -68,10 +86,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         fab = (FloatingActionButton)findViewById(R.id.fab);
+        listOfMessages = (ListView)findViewById(R.id.list_of_messages);
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 EditText input = (EditText)findViewById(R.id.input);
+
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                String usingUrl = String.valueOf(user.getPhotoUrl());
+
+                if(usingUrl.equals("null")){
+                    usingUrl = "";
+                }
 
                 // Read the input field and push a new instance
                 // of ChatMessage to the Firebase database
@@ -81,11 +108,14 @@ public class MainActivity extends AppCompatActivity {
                         .setValue(new ChatMessage(input.getText().toString(),
                                 FirebaseAuth.getInstance()
                                         .getCurrentUser()
-                                        .getDisplayName())
+                                        .getDisplayName(), usingUrl)
                         );
 
                 // Clear the input
                 input.setText("");
+
+                adapter.notifyDataSetChanged();
+                scrollMyListViewToBottom();
             }
         });
 
@@ -117,8 +147,8 @@ public class MainActivity extends AppCompatActivity {
                                     .createSignInIntentBuilder()
                                     .setProviders(Arrays.asList(new AuthUI.IdpConfig.Builder(AuthUI.EMAIL_PROVIDER).build(),
                                             new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build(),
-                                            new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build(),
-                                            new AuthUI.IdpConfig.Builder(AuthUI.TWITTER_PROVIDER).build()))
+                                            new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build()))
+                                    .setLogo(R.drawable.temp_logo)
                                     .build(),SIGN_IN_REQUEST_CODE
                     );
 
@@ -186,7 +216,6 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
-        FirebaseUser currentUser = mAuth.getCurrentUser();
     }
 
 
@@ -199,8 +228,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void displayChatMessages() {
-        ListView listOfMessages = (ListView)findViewById(R.id.list_of_messages);
-
         adapter = new FirebaseListAdapter<ChatMessage>(this, ChatMessage.class, R.layout.messages, FirebaseDatabase.getInstance().getReference()) {
 
             @Override
@@ -209,17 +236,53 @@ public class MainActivity extends AppCompatActivity {
                 TextView messageText = (TextView)v.findViewById(R.id.message_text);
                 TextView messageUser = (TextView)v.findViewById(R.id.message_user);
                 TextView messageTime = (TextView)v.findViewById(R.id.message_time);
-
+                final ImageView avatar = (ImageView) v.findViewById(R.id.avatar);
                 // Set their text
                 messageText.setText(model.getMessageText());
                 messageUser.setText(model.getMessageUser());
 
+                String testing  = model.getImage();
+
+                if(testing==null || testing.equals("") || testing.equals("null")){
+                    Glide.with(getApplicationContext()).load("").asBitmap().placeholder(R.drawable.blank).centerCrop().into(new BitmapImageViewTarget(avatar) {
+                        @Override
+                        protected void setResource(Bitmap resource) {
+                            RoundedBitmapDrawable circularBitmapDrawable =
+                                    RoundedBitmapDrawableFactory.create(getApplicationContext().getResources(), resource);
+                            circularBitmapDrawable.setCircular(true);
+                            avatar.setImageDrawable(circularBitmapDrawable);
+                        }
+                    });
+                }else{
+
+                    Glide.with(getApplicationContext()).load(testing).asBitmap().centerCrop().into(new BitmapImageViewTarget(avatar) {
+                        @Override
+                        protected void setResource(Bitmap resource) {
+                            RoundedBitmapDrawable circularBitmapDrawable =
+                                    RoundedBitmapDrawableFactory.create(getApplicationContext().getResources(), resource);
+                            circularBitmapDrawable.setCircular(true);
+                            avatar.setImageDrawable(circularBitmapDrawable);
+                        }
+                    });
+                }
+
+
                 // Format the date before showing it
-                messageTime.setText(DateFormat.format("dd-MM-yyyy (HH:mm:ss)",
-                        model.getMessageTime()));
+                messageTime.setText(DateFormat.format("hh:mm a", model.getMessageTime()));
             }
         };
 
         listOfMessages.setAdapter(adapter);
+    }
+
+
+    private void scrollMyListViewToBottom() {
+        myListView.post(new Runnable() {
+            @Override
+            public void run() {
+                // Select the last row so it will scroll into view...
+                listOfMessages.setSelection(listOfMessages.getCount() - 1);
+            }
+        });
     }
 }
