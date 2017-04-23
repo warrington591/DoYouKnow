@@ -34,7 +34,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserInfo;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,11 +56,13 @@ public class MainActivity extends AppCompatActivity {
     private String TAG = "MainActivity";
     private FloatingActionButton fab;
 
+    private DatabaseReference mPostReference;
     private FirebaseListAdapter<ChatMessage> adapter;
     private String facebookUserId="";
     private List<? extends UserInfo> now = new ArrayList<>();
     private Handler myListView= new Handler(Looper.myLooper());
     private ListView listOfMessages;
+    private FirebaseUser user;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -116,6 +125,9 @@ public class MainActivity extends AppCompatActivity {
 
                 adapter.notifyDataSetChanged();
                 scrollMyListViewToBottom();
+
+                Log.d(TAG, "t: "+ FirebaseInstanceId.getInstance().getToken());
+
             }
         });
 
@@ -124,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                FirebaseUser user = firebaseAuth.getCurrentUser();
+                user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
                     Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
@@ -138,7 +150,26 @@ public class MainActivity extends AppCompatActivity {
 
                     // Load chat room contents
                     displayChatMessages();
+                    scrollMyListViewToBottom();
 
+                    FirebaseMessaging.getInstance().subscribeToTopic("updates");
+                    mPostReference = FirebaseDatabase.getInstance().getReference();
+                    ValueEventListener postListener = new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            // Get Post object and use the values to update the UI
+                            Object post = dataSnapshot.getValue();
+                            Log.d(TAG, "onDataChange: ");
+                            scrollMyListViewToBottom();
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            // Getting Post failed, log a message
+                            Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
+                        }
+                    };
+                    mPostReference.addValueEventListener(postListener);
                 } else {
                     // User is signed out
                     Log.d(TAG, "onAuthStateChanged:signed_out");
@@ -216,6 +247,10 @@ public class MainActivity extends AppCompatActivity {
     public void onStart() {
         super.onStart();
         mAuth.addAuthStateListener(mAuthListener);
+        if(user!=null){
+        FirebaseMessaging.getInstance().subscribeToTopic("updates");}
+
+        Log.d(TAG, "t: "+ FirebaseInstanceId.getInstance().getToken());
     }
 
 
