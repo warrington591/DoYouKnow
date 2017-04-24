@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                 adapter.notifyDataSetChanged();
                 scrollMyListViewToBottom();
 
-                Log.d(TAG, "t: "+ FirebaseInstanceId.getInstance().getToken());
+                Log.d("TokenTag", "t: "+ FirebaseInstanceId.getInstance().getToken());
 
             }
         });
@@ -139,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
                 user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     // User is signed in
-                    Log.d(TAG, "onAuthStateChanged:signed_in:" + user.getUid());
 
                     Toast.makeText(getApplicationContext(),
                             "Welcome " + FirebaseAuth.getInstance()
@@ -172,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
                     mPostReference.addValueEventListener(postListener);
                 } else {
                     // User is signed out
-                    Log.d(TAG, "onAuthStateChanged:signed_out");
                     startActivityForResult(
                             AuthUI.getInstance()
                                     .createSignInIntentBuilder()

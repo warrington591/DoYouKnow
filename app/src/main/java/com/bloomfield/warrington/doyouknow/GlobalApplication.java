@@ -3,6 +3,9 @@ package com.bloomfield.warrington.doyouknow;
 import android.app.Application;
 import android.content.Context;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.FirebaseDatabase;
+
 /**
  * Created by Warrington on 4/22/17.
  */
@@ -14,6 +17,10 @@ public class GlobalApplication extends Application {
     public void onCreate() {
         super.onCreate();
         globalContext = getBaseContext();
+
+        if(!FirebaseApp.getApps(this).isEmpty()) {
+            FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        }
     }
 
     public Context getBaseContext(){
