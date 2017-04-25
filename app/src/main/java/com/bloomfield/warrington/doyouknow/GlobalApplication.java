@@ -16,14 +16,13 @@ public class GlobalApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        globalContext = getBaseContext();
-
+        globalContext = getApplicationContext();
         if(!FirebaseApp.getApps(this).isEmpty()) {
             FirebaseDatabase.getInstance().setPersistenceEnabled(true);
         }
     }
 
-    public Context getBaseContext(){
-        return globalContext;
+    public static Context globalContext(){
+        return globalContext ;
     }
 }

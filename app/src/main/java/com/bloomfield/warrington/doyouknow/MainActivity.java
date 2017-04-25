@@ -1,5 +1,6 @@
 package com.bloomfield.warrington.doyouknow;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -7,8 +8,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.TabLayout;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateFormat;
@@ -16,6 +19,8 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsSpinner;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -55,6 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth.AuthStateListener mAuthListener;
     private String TAG = "MainActivity";
     private FloatingActionButton fab;
+    public static Activity mainActivity;
 
     private DatabaseReference mPostReference;
     private FirebaseListAdapter<ChatMessage> adapter;
@@ -63,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
     private Handler myListView= new Handler(Looper.myLooper());
     private ListView listOfMessages;
     private FirebaseUser user;
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -93,43 +101,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        mainActivity = this;
+//        fab = (FloatingActionButton)findViewById(R.id.fab);
+//        listOfMessages = (ListView)findViewById(R.id.list_of_messages);
 
-        fab = (FloatingActionButton)findViewById(R.id.fab);
-        listOfMessages = (ListView)findViewById(R.id.list_of_messages);
-
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                EditText input = (EditText)findViewById(R.id.input);
-
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                String usingUrl = String.valueOf(user.getPhotoUrl());
-
-                if(usingUrl.equals("null")){
-                    usingUrl = "";
-                }
-
-                // Read the input field and push a new instance
-                // of ChatMessage to the Firebase database
-                FirebaseDatabase.getInstance()
-                        .getReference()
-                        .push()
-                        .setValue(new ChatMessage(input.getText().toString(),
-                                FirebaseAuth.getInstance()
-                                        .getCurrentUser()
-                                        .getDisplayName(), usingUrl)
-                        );
-
-                // Clear the input
-                input.setText("");
-
-                adapter.notifyDataSetChanged();
-                scrollMyListViewToBottom();
-
-                Log.d("TokenTag", "t: "+ FirebaseInstanceId.getInstance().getToken());
-
-            }
-        });
+        viewPager = (ViewPager) findViewById(R.id.viewpager);
+        viewPager.setAdapter(new CustomAdapter(getSupportFragmentManager(), getApplicationContext()));
+        tabLayout =(TabLayout) findViewById(R.id.tabLayout);
+        tabLayout.setupWithViewPager(viewPager);
 
         mAuth = FirebaseAuth.getInstance();
 
@@ -146,29 +125,12 @@ public class MainActivity extends AppCompatActivity {
                                     .getDisplayName(),
                             Toast.LENGTH_LONG)
                             .show();
+//
+//                    // Load chat room contents
+//                    displayChatMessages();
+//                    scrollMyListViewToBottom();
+//
 
-                    // Load chat room contents
-                    displayChatMessages();
-                    scrollMyListViewToBottom();
-
-                    FirebaseMessaging.getInstance().subscribeToTopic("updates");
-                    mPostReference = FirebaseDatabase.getInstance().getReference();
-                    ValueEventListener postListener = new ValueEventListener() {
-                        @Override
-                        public void onDataChange(DataSnapshot dataSnapshot) {
-                            // Get Post object and use the values to update the UI
-                            Object post = dataSnapshot.getValue();
-                            Log.d(TAG, "onDataChange: ");
-                            scrollMyListViewToBottom();
-                        }
-
-                        @Override
-                        public void onCancelled(DatabaseError databaseError) {
-                            // Getting Post failed, log a message
-                            Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
-                        }
-                    };
-                    mPostReference.addValueEventListener(postListener);
                 } else {
                     // User is signed out
                     startActivityForResult(
@@ -202,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
                         "Successfully signed in. Welcome!",
                         Toast.LENGTH_LONG)
                         .show();
-                displayChatMessages();
+//                displayChatMessages();
             } else {
                 // Sign in failed
                 if (response == null) {
@@ -244,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart() {
         super.onStart();
+        mainActivity = this;
         mAuth.addAuthStateListener(mAuthListener);
         if(user!=null){
         FirebaseMessaging.getInstance().subscribeToTopic("updates");}
@@ -258,6 +221,13 @@ public class MainActivity extends AppCompatActivity {
         if (mAuthListener != null) {
             mAuth.removeAuthStateListener(mAuthListener);
         }
+    }
+
+    @Override
+    protected void onPostResume() {
+        super.onPostResume();
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
     }
 
     private void displayChatMessages() {
